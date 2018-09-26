@@ -33,7 +33,7 @@
     "variables": {
       "containerName": "teamcity-server",
       "containerImage": "jetbrains/teamcity-server",
-      "port2expose": 8111,
+      "publicPort": 8111,
       "dataShareName": "teamcitydev-data",
       "logsShareName": "teamcitydev-logs"
     },
@@ -75,7 +75,7 @@
                 },
                 "ports": [
                   {
-                    "port": "[variables('port2expose')]"
+                    "port": "[variables('publicPort')]"
                   }
                 ],
                 "volumeMounts": [
@@ -98,7 +98,7 @@
             "ports": [
               {
                 "protocol": "TCP",
-                "port": "[variables('port2expose')]"
+                "port": "[variables('publicPort')]"
               }
             ]
           }
