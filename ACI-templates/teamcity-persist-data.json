@@ -1,0 +1,115 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "containerGroupName": {
+        "type": "string",
+        "defaultValue": "TeamCityDev",
+        "metadata": {
+          "description": "Container Group name."
+        }
+      },
+      "dnsLabel": {
+        "type": "string",
+        "defaultValue": "teamcitydev",
+        "metadata": {
+          "description": "Container Group name."
+        }
+      },
+      "persistentStorageAccountName": {
+        "type": "string",
+        "defaultValue": "teamcitystorage",
+        "metadata": {
+          "description": "Storage account name for persistent data."
+        }
+      },
+      "persistentStorageAccountKey": {
+        "type": "string",
+        "metadata": {
+          "description": "Storage account access key for persistent data."
+        }
+      }
+    },
+    "variables": {
+      "containerName": "teamcity-server",
+      "containerImage": "jetbrains/teamcity-server",
+      "port2expose": 8111,
+      "dataShareName": "teamcitydev-data",
+      "logsShareName": "teamcitydev-logs"
+    },
+    "resources": [
+      {
+        "name": "[parameters('containerGroupName')]",
+        "type": "Microsoft.ContainerInstance/containerGroups",
+        "apiVersion": "2018-04-01",
+        "location": "[resourceGroup().location]",
+        "properties": {
+          "volumes": [
+            {
+              "name": "datavolume",
+              "azureFile": {
+                "shareName": "[variables('dataShareName')]",
+                "storageAccountName": "[parameters('persistentStorageAccountName')]",
+                "storageAccountKey": "[parameters('persistentStorageAccountKey')]"
+              }
+            },
+            {
+              "name": "logsvolume",
+              "azureFile": {
+                "shareName": "[variables('logsShareName')]",
+                "storageAccountName": "[parameters('persistentStorageAccountName')]",
+                "storageAccountKey": "[parameters('persistentStorageAccountKey')]"
+              }
+            }
+          ],
+          "containers": [
+            {
+              "name": "[variables('containerName')]",
+              "properties": {
+                "image": "[variables('containerImage')]",
+                "resources": {
+                  "requests": {
+                    "cpu": 1,
+                    "memoryInGB": 1.5
+                  }
+                },
+                "ports": [
+                  {
+                    "port": "[variables('port2expose')]"
+                  }
+                ],
+                "volumeMounts": [
+                  {
+                    "name": "datavolume",
+                    "mountPath": "/data/teamcity_server/datadir/"
+                  },
+                  {
+                    "name": "logsvolume",
+                    "mountPath": "/opt/teamcity/logs"
+                  }
+                ]
+              }
+            }
+          ],
+          "osType": "Linux",
+          "ipAddress": {
+            "type": "Public",
+            "dnsNameLabel": "[parameters('dnsLabel')]",
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": "[variables('port2expose')]"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "outputs": {
+      "containerIPv4Address": {
+        "type": "string",
+        "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.ip]"
+      }
+    }
+  }
+  
